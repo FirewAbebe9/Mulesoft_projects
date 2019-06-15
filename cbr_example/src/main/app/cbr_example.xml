@@ -13,10 +13,10 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <expression-filter expression="#[message.inboundProperties.'http.request.uri' != '/favicon.ico']" doc:name="Expression"/>
         <set-variable variableName="language " value="#[message.inboundProperties.'http.query.params'.language]" doc:name="Set Language Variable"/>
         <choice doc:name="Choice">
-            <when expression="#[flowVars.'language' == 'Spanish']">
+            <when expression="#[flowVars.language = 'Spanish']">
                 <set-payload doc:name="Reply in Spanish" value="Hola!"/>
             </when>
-            <when expression="#[flowVars.'language'  == 'French']">
+            <when expression="#[flowVars.language = 'French']">
                 <set-payload doc:name="Reply in French" value="Bonjour!"/>
             </when>
             <otherwise>
