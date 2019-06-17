@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <flow name="flowconfigurationFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/flow1" doc:name="HTTP"/>
+        <set-variable variableName="variable1" value="#[message.inboundProperties.'http.query.params'.key_var]" doc:name="Variable"/>
+        <choice doc:name="Choice">
+            <when expression="#[flowVars.variable1 == &quot;variable1&quot;]">
+                <flow-ref name="flow1" doc:name="Flow Reference"/>
+            </when>
+            <otherwise>
+                <flow-ref name="flow2" doc:name="Flow Reference"/>
+            </otherwise>
+        </choice>
+    </flow>
+    <sub-flow name="flow1">
+        <set-payload value="Hola in Spanish!" doc:name="Set Payload"/>
+    </sub-flow>
+    <sub-flow name="flow2">
+        <set-payload value="Hi in English!" doc:name="Set Payload"/>
+    </sub-flow>
+</mule>
