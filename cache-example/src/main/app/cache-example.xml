@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:context="http://www.springframework.org/schema/context" xmlns:ws="http://www.mulesoft.org/schema/mule/ws" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ws http://www.mulesoft.org/schema/mule/ws/current/mule-ws.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    
+    <db:mysql-config name="MySQL_Configuration" host="${db.host}" port="${db.port}" user="${db.user}" password="${db.password}" database="${db.database}" doc:name="MySQL Configuration"/>
+    <context:property-placeholder location="examples-${env}.properties"/>
+    <ee:object-store-caching-strategy name="Caching_Strategy" keyGenerationExpression="#[flowVars.cacheKey]" doc:name="Caching Strategy">
+        <in-memory-store name="FlightCache" maxEntries="12000" entryTTL="15000" expirationInterval="15000"/>
+    </ee:object-store-caching-strategy>
+    <flow name="cache-exampleFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/getFlights" doc:name="HTTP_token_request" allowedMethods="GET"/>
+        <set-variable variableName="destination" value="#[message.inboundProperties.'http.query.params'.destination]" doc:name="Variable"/>
+        <set-variable variableName="cacheKey" value="#[message.inboundProperties.'http.request.uri']" doc:name="Set Cache Key"/>
+        <logger message="#[flowVars.cacheKey]" level="INFO" doc:name="Logger"/>
+        <ee:cache cachingStrategy-ref="Caching_Strategy" doc:name="Cache">
+            <flow-ref name="getDataFromDB" doc:name="Flow Reference"/>
+        </ee:cache>
+    </flow>
+    <sub-flow name="getDataFromDB">
+        <logger message="'This is from the getDataFromDB'" level="INFO" doc:name="Logger"/>
+        <db:select config-ref="MySQL_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[SELECT * FROM flights
+WHERE toAirport = #[flowVars.destination]]]></db:parameterized-query>
+        </db:select>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+    </sub-flow>
+</mule>
